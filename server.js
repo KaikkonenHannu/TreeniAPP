@@ -20,7 +20,7 @@ app.use(helmet({
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
       imgSrc: ["'self'", "data:", "https://i.ytimg.com", "https://*.ytimg.com"],
       frameSrc: ["'self'", "https://www.youtube.com"],
-      connectSrc: ["'self'"]
+      connectSrc: ["'self'", "https://treeniapp-production.up.railway.app"]
     }
   }
 }));
