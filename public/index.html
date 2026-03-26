@@ -1823,6 +1823,8 @@ async function loadExerciseGif(exerciseIndex, exerciseName) {
 function renderGif(container, data) {
   if (data.gifUrl) {
     container.innerHTML = '<img class="exercise-guide-gif" src="' + data.gifUrl + '" alt="' + data.name + '" onerror="this.parentElement.innerHTML=\'\'">';
+  } else if (data.muscles) {
+    container.innerHTML = '<div style="padding:8px 12px;background:rgba(200,255,0,.06);border:1px solid rgba(200,255,0,.15);border-radius:10px;font-size:12px"><span style="color:var(--accent)">&#128170; ' + data.muscles + '</span>' + (data.musclesSecondary ? ' <span style="color:var(--muted)">&middot; ' + data.musclesSecondary + '</span>' : '') + '</div>';
   } else {
     container.innerHTML = '';
   }
