@@ -1,4 +1,4 @@
-const CACHE_NAME = 'treeni-ai-v17';
+const CACHE_NAME = 'treeni-ai-v18';
 const ASSETS = [
   '/',
   '/index.html',
