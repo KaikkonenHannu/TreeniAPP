@@ -522,15 +522,6 @@
         &#129302; Luo ohjelma tekoalylla
       </button>
 
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
-        <div style="flex:1;height:1px;background:var(--border)"></div>
-        <span style="font-size:12px;color:var(--muted)">tai</span>
-        <div style="flex:1;height:1px;background:var(--border)"></div>
-      </div>
-
-      <button class="btn btn-secondary" onclick="loadDemo()" style="margin-bottom:32px">
-        &#127918; Kokeile demo-ohjelmalla (ei API-avainta)
-      </button>
     </div>
   </div>
 
@@ -1068,7 +1059,13 @@ Vastaa AINOASTAAN JSON (ei muuta tekstia):
       if (d.error) throw new Error(typeof d.error === 'string' ? d.error : d.error.message || 'AI error');
       text = d.content.map(i => i.text || '').join('');
     }
-    const prog = JSON.parse(text.replace(/```json|```/g, '').trim());
+    // Extract JSON from AI response - find the outermost { }
+    let cleaned = text.replace(/```json|```/g, '').trim();
+    const jsonStart = cleaned.indexOf('{');
+    const jsonEnd = cleaned.lastIndexOf('}');
+    if (jsonStart === -1 || jsonEnd === -1) throw new Error('AI ei palauttanut JSON-vastausta');
+    cleaned = cleaned.substring(jsonStart, jsonEnd + 1);
+    const prog = JSON.parse(cleaned);
     prog.created = new Date().toLocaleDateString('fi-FI');
     prog.startDate = new Date().toISOString().split('T')[0];
     state.program = prog;
@@ -1201,7 +1198,11 @@ async function adaptProgram() {
     const d = await api('/api/ai/anthropic', { method: 'POST', body: { messages: [{ role: 'user', content: prompt }], max_tokens: 4000 } });
     if (d.error) throw new Error(d.error.message || 'AI error');
     const text = d.content.map(i => i.text || '').join('');
-    const newWeeks = JSON.parse(text.replace(/```json|```/g, '').trim());
+    let cleanedAdj = text.replace(/```json|```/g, '').trim();
+    const adjStart = cleanedAdj.indexOf('[');
+    const adjEnd = cleanedAdj.lastIndexOf(']');
+    if (adjStart !== -1 && adjEnd !== -1) cleanedAdj = cleanedAdj.substring(adjStart, adjEnd + 1);
+    const newWeeks = JSON.parse(cleanedAdj);
     for (let i = 0; i < newWeeks.length && (pos.weekIndex + i) < state.program.weeks_data.length; i++) {
       state.program.weeks_data[pos.weekIndex + i] = newWeeks[i];
     }
