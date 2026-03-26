@@ -115,9 +115,9 @@
   .week-tab { padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; cursor: pointer; border: 1.5px solid var(--border); background: var(--surface2); color: var(--muted); white-space: nowrap; transition: all .2s; }
   .week-tab.active { border-color: var(--accent); background: rgba(200,255,0,.1); color: var(--accent); }
   .calendar-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
-  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
-  .cal-label { text-align: center; font-size: 10px; font-weight: 700; color: var(--muted); padding: 4px 0; }
-  .cal-day { aspect-ratio: 1; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 12px; cursor: pointer; transition: background .2s; position: relative; }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; max-width: 100%; }
+  .cal-label { text-align: center; font-size: 9px; font-weight: 700; color: var(--muted); padding: 4px 0; }
+  .cal-day { aspect-ratio: 1; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 11px; cursor: pointer; transition: background .2s; position: relative; min-width: 0; }
   .cal-day.empty { cursor: default; }
   .cal-day.today { border: 1.5px solid var(--accent); color: var(--accent); font-weight: 700; }
   .cal-day.has-workout { background: rgba(200,255,0,.1); color: var(--accent); }
@@ -627,11 +627,36 @@
       <button class="btn btn-danger" style="width:auto;padding:8px 14px;font-size:13px" onclick="logout()">Kirjaudu ulos</button>
     </div>
     <div style="margin-top:16px;padding:12px;background:var(--surface2);border-radius:10px;font-size:12px;color:var(--muted);text-align:center">TreeniAI v5.0 &middot; Full-stack + SQLite</div>
+    <div style="text-align:center;margin-top:10px"><span style="font-size:12px;color:var(--muted);cursor:pointer;text-decoration:underline" onclick="document.getElementById('privacy-modal').classList.add('open');closeSettings()">Tietosuojaseloste</span></div>
     <button class="btn btn-secondary" style="margin-top:12px" onclick="closeSettings()">Sulje</button>
   </div>
 </div>
 
 <div id="toast"></div>
+
+<!-- PRIVACY MODAL -->
+<div class="modal-overlay" id="privacy-modal">
+  <div class="modal" style="max-height:85dvh;overflow-y:auto">
+    <div class="modal-handle"></div>
+    <div class="modal-title">TIETOSUOJASELOSTE</div>
+    <div style="font-size:13px;color:var(--muted);line-height:1.7">
+      <p style="margin-bottom:12px"><strong style="color:var(--text)">Rekisterinpitaja:</strong> TreeniAI-sovellus (yksityiskaytto)</p>
+      <p style="margin-bottom:12px"><strong style="color:var(--text)">Kerattavat tiedot:</strong></p>
+      <ul style="margin-left:16px;margin-bottom:12px">
+        <li>Nimi ja PIN-koodi (kirjautuminen)</li>
+        <li>Syntymapaiva, pituus, paino, sukupuoli (treeniohjelman luonti)</li>
+        <li>Treenihistoria ja suoritustiedot</li>
+        <li>Unitiedot (vapaaehtoinen)</li>
+      </ul>
+      <p style="margin-bottom:12px"><strong style="color:var(--text)">Tietojen kaytto:</strong> Tietoja kaytetaan ainoastaan henkilokohtaisen treeniohjelman luomiseen ja edistymisen seurantaan. Tietoja ei jaeta kolmansille osapuolille.</p>
+      <p style="margin-bottom:12px"><strong style="color:var(--text)">Tietojen tallennus:</strong> Tiedot tallennetaan sovelluksen palvelimelle (Railway) ja selaimen paikalliseen muistiin (localStorage). PIN-koodit tallennetaan tiivisteena (hash).</p>
+      <p style="margin-bottom:12px"><strong style="color:var(--text)">Kolmannet palvelut:</strong> Treeniohjelman luontiin kaytetaan Anthropic AI -palvelua. Liikeohjeita haetaan ExerciseDB- ja Wger-palveluista. Videoita haetaan YouTube-palvelusta. Naille valitetaan vain liikkeen nimi, ei henkilotietoja.</p>
+      <p style="margin-bottom:12px"><strong style="color:var(--text)">Tietojen poisto:</strong> Voit poistaa kaikki tietosi asetuksista (ohjelma, historia). Profiilin poistamiseksi ota yhteytta yllapitajaan.</p>
+      <p><strong style="color:var(--text)">Oikeutesi:</strong> Sinulla on oikeus nahdae, muuttaa ja pyytaa tietojesi poistamista.</p>
+    </div>
+    <button class="btn btn-secondary" style="margin-top:16px" onclick="document.getElementById('privacy-modal').classList.remove('open')">Sulje</button>
+  </div>
+</div>
 
 <script>
 // ============================================================
@@ -1838,14 +1863,31 @@ async function loadExerciseGif(exerciseIndex, exerciseName) {
   }
 }
 
-function renderGif(container, data) {
+async function renderGif(container, data) {
   if (data.gifUrl) {
-    container.innerHTML = '<img class="exercise-guide-gif" src="' + data.gifUrl + '" alt="' + data.name + '" onerror="this.parentElement.innerHTML=\'\'">';
-  } else if (data.muscles) {
-    container.innerHTML = '<div style="padding:8px 12px;background:rgba(200,255,0,.06);border:1px solid rgba(200,255,0,.15);border-radius:10px;font-size:12px"><span style="color:var(--accent)">&#128170; ' + data.muscles + '</span>' + (data.musclesSecondary ? ' <span style="color:var(--muted)">&middot; ' + data.musclesSecondary + '</span>' : '') + '</div>';
+    container.innerHTML = '<img class="exercise-guide-gif" src="' + data.gifUrl + '" alt="' + data.name + '" onerror="loadYtFallback(this.parentElement,\'' + (data.name || '').replace(/'/g, "\\'") + '\')">';
   } else {
-    container.innerHTML = '';
+    // No GIF - try YouTube short video as fallback
+    await loadYtFallback(container, data.name || '');
   }
+  // Show muscles below
+  if (data.muscles) {
+    container.innerHTML += '<div style="padding:6px 10px;margin-top:6px;background:rgba(200,255,0,.06);border:1px solid rgba(200,255,0,.15);border-radius:8px;font-size:11px"><span style="color:var(--accent)">&#128170; ' + data.muscles + '</span>' + (data.musclesSecondary ? ' <span style="color:var(--muted)">&middot; ' + data.musclesSecondary + '</span>' : '') + '</div>';
+  }
+}
+
+async function loadYtFallback(container, exerciseName) {
+  try {
+    const data = await api('/api/ai/youtube?q=' + encodeURIComponent(exerciseName + ' exercise form demo short'));
+    if (data.items && data.items.length > 0) {
+      const item = data.items[0];
+      if (item.id && item.id.videoId) {
+        container.innerHTML = '<iframe class="exercise-guide-gif" style="aspect-ratio:16/9;border:none;max-width:100%;border-radius:10px" src="https://www.youtube-nocookie.com/embed/' + item.id.videoId + '?playsinline=1&origin=' + encodeURIComponent(window.location.origin) + '" allow="accelerometer;encrypted-media;gyroscope;picture-in-picture" allowfullscreen></iframe>';
+        return;
+      }
+    }
+  } catch(e) {}
+  container.innerHTML = '';
 }
 
 // Toggle text description on button press
