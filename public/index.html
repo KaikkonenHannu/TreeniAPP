@@ -198,6 +198,23 @@
   /* Missed workout alert */
   .missed-alert { background: rgba(255,77,109,.08); border: 1px solid rgba(255,77,109,.25); border-radius: 12px; padding: 12px 14px; margin-bottom: 12px; }
   .missed-alert-text { font-size: 13px; color: var(--accent2); line-height: 1.4; }
+  /* Login styles */
+  .login-screen { display: none; flex-direction: column; align-items: center; justify-content: center; height: 100dvh; padding: 24px; text-align: center; }
+  .login-screen.active { display: flex; }
+  .login-logo { font-family: 'Bebas Neue', sans-serif; font-size: 48px; letter-spacing: 3px; color: var(--accent); margin-bottom: 4px; }
+  .login-sub { font-size: 13px; color: var(--muted); margin-bottom: 32px; }
+  .login-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; width: 100%; max-width: 340px; }
+  .login-title { font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 1px; margin-bottom: 16px; }
+  .pin-inputs { display: flex; gap: 10px; justify-content: center; margin: 16px 0; }
+  .pin-input { width: 48px; height: 56px; background: var(--surface2); border: 2px solid var(--border); border-radius: 12px; color: var(--text); font-family: 'Bebas Neue', sans-serif; font-size: 28px; text-align: center; outline: none; -webkit-text-security: disc; }
+  .pin-input:focus { border-color: var(--accent); }
+  .profile-list { display: flex; flex-direction: column; gap: 8px; margin: 12px 0; max-height: 240px; overflow-y: auto; }
+  .profile-item { display: flex; align-items: center; gap: 12px; padding: 14px 16px; background: var(--surface2); border: 2px solid var(--border); border-radius: 12px; cursor: pointer; transition: all .2s; }
+  .profile-item:hover, .profile-item.selected { border-color: var(--accent); background: rgba(200,255,0,.05); }
+  .profile-avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--accent); color: #0a0a0f; display: flex; align-items: center; justify-content: center; font-family: 'Bebas Neue', sans-serif; font-size: 18px; flex-shrink: 0; }
+  .profile-name { font-size: 16px; font-weight: 600; }
+  .login-error { color: var(--accent2); font-size: 13px; margin-top: 8px; min-height: 20px; }
+  .login-link { color: var(--accent); font-size: 13px; cursor: pointer; margin-top: 12px; text-decoration: underline; }
 </style>
 </head>
 <body>
@@ -205,7 +222,86 @@
   <div class="splash-logo">TREENI AI</div>
   <div class="splash-sub">ALYKKAAMPI TREENAAMINEN</div>
 </div>
-<div id="app">
+<!-- LOGIN SCREENS -->
+<div id="login-family" class="login-screen active">
+  <div class="login-logo">TREENI AI</div>
+  <div class="login-sub">Perheen treeniappi</div>
+  <div class="login-card">
+    <div class="login-title">PERHEEN KOODI</div>
+    <input type="password" id="family-code-input" placeholder="Syota koodi" style="text-align:center;font-size:18px;letter-spacing:4px" maxlength="30">
+    <div class="login-error" id="family-error"></div>
+    <button class="btn btn-primary" style="margin-top:12px" onclick="verifyFamilyCode()">Kirjaudu</button>
+  </div>
+</div>
+
+<div id="login-profile" class="login-screen">
+  <div class="login-logo">TREENI AI</div>
+  <div class="login-sub">Valitse kayttaja</div>
+  <div class="login-card">
+    <div class="login-title">KUKA TREENAA?</div>
+    <div class="profile-list" id="profile-list"></div>
+    <button class="btn btn-secondary" style="margin-top:8px" onclick="showCreateProfile()">+ Luo uusi profiili</button>
+  </div>
+</div>
+
+<div id="login-pin" class="login-screen">
+  <div class="login-logo">TREENI AI</div>
+  <div class="login-sub" id="pin-user-label">-</div>
+  <div class="login-card">
+    <div class="login-title">SYOTA PIN</div>
+    <div class="pin-inputs">
+      <input class="pin-input" type="tel" maxlength="1" inputmode="numeric" data-pin="0">
+      <input class="pin-input" type="tel" maxlength="1" inputmode="numeric" data-pin="1">
+      <input class="pin-input" type="tel" maxlength="1" inputmode="numeric" data-pin="2">
+      <input class="pin-input" type="tel" maxlength="1" inputmode="numeric" data-pin="3">
+    </div>
+    <div class="login-error" id="pin-error"></div>
+    <div class="login-link" onclick="showResetPin()">Unohdin PIN-koodin</div>
+    <button class="btn btn-secondary" style="margin-top:12px" onclick="showProfileSelect()">Takaisin</button>
+  </div>
+</div>
+
+<div id="login-create" class="login-screen">
+  <div class="login-logo">TREENI AI</div>
+  <div class="login-sub">Luo uusi profiili</div>
+  <div class="login-card">
+    <div class="login-title">UUSI KAYTTAJA</div>
+    <div class="form-group"><label>Nimi</label><input type="text" id="new-profile-name" placeholder="esim. Hannu" maxlength="20"></div>
+    <div class="form-group"><label>PIN-koodi (4 numeroa)</label>
+      <div class="pin-inputs">
+        <input class="pin-input" type="tel" maxlength="1" inputmode="numeric" data-newpin="0">
+        <input class="pin-input" type="tel" maxlength="1" inputmode="numeric" data-newpin="1">
+        <input class="pin-input" type="tel" maxlength="1" inputmode="numeric" data-newpin="2">
+        <input class="pin-input" type="tel" maxlength="1" inputmode="numeric" data-newpin="3">
+      </div>
+    </div>
+    <div class="login-error" id="create-error"></div>
+    <button class="btn btn-primary" style="margin-top:8px" onclick="createProfile()">Luo profiili</button>
+    <button class="btn btn-secondary" style="margin-top:8px" onclick="showProfileSelect()">Takaisin</button>
+  </div>
+</div>
+
+<div id="login-reset" class="login-screen">
+  <div class="login-logo">TREENI AI</div>
+  <div class="login-sub" id="reset-user-label">-</div>
+  <div class="login-card">
+    <div class="login-title">VAIHDA PIN</div>
+    <div class="form-group"><label>Perheen koodi</label><input type="password" id="reset-family-code" placeholder="Syota perheen koodi"></div>
+    <div class="form-group"><label>Uusi PIN (4 numeroa)</label>
+      <div class="pin-inputs">
+        <input class="pin-input" type="tel" maxlength="1" inputmode="numeric" data-resetpin="0">
+        <input class="pin-input" type="tel" maxlength="1" inputmode="numeric" data-resetpin="1">
+        <input class="pin-input" type="tel" maxlength="1" inputmode="numeric" data-resetpin="2">
+        <input class="pin-input" type="tel" maxlength="1" inputmode="numeric" data-resetpin="3">
+      </div>
+    </div>
+    <div class="login-error" id="reset-error"></div>
+    <button class="btn btn-primary" style="margin-top:8px" onclick="resetPin()">Vaihda PIN</button>
+    <button class="btn btn-secondary" style="margin-top:8px" onclick="showPinEntry()">Takaisin</button>
+  </div>
+</div>
+
+<div id="app" style="display:none">
 
   <!-- UNI -->
   <div class="screen" id="screen-sleep">
@@ -526,6 +622,10 @@
       <div><div class="settings-label">Push-ilmoitukset</div><div class="settings-sub" id="push-status">Ei kaytossa</div></div>
       <button class="btn btn-secondary" style="width:auto;padding:8px 14px;font-size:13px" onclick="subscribePush()">Ota kayttoon</button>
     </div>
+    <div class="settings-row">
+      <div><div class="settings-label">Kirjautunut</div><div class="settings-sub" id="settings-user-name">-</div></div>
+      <button class="btn btn-danger" style="width:auto;padding:8px 14px;font-size:13px" onclick="logout()">Kirjaudu ulos</button>
+    </div>
     <div style="margin-top:16px;padding:12px;background:var(--surface2);border-radius:10px;font-size:12px;color:var(--muted);text-align:center">TreeniAI v5.0 &middot; Full-stack + SQLite</div>
     <button class="btn btn-secondary" style="margin-top:12px" onclick="closeSettings()">Sulje</button>
   </div>
@@ -540,23 +640,204 @@
 const API_BASE = '';
 const AI_PROVIDER = 'anthropic';
 
-// Device ID for user identification
-function getDeviceId() {
-  let id = localStorage.getItem('treeni_device_id');
-  if (!id) { id = 'dev_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9); localStorage.setItem('treeni_device_id', id); }
-  return id;
-}
-
 let currentUserId = null;
+let currentFamilyCode = '';
+let currentUserName = '';
 
 async function api(path, opts = {}) {
   const url = API_BASE + path;
   const response = await fetch(url, {
     ...opts,
-    headers: { 'Content-Type': 'application/json', ...opts.headers },
+    headers: { 'Content-Type': 'application/json', 'X-Family-Code': currentFamilyCode, ...opts.headers },
     body: opts.body ? JSON.stringify(opts.body) : undefined
   });
   return response.json();
+}
+
+// ============================================================
+// LOGIN FLOW
+// ============================================================
+function showLoginScreen(id) {
+  document.querySelectorAll('.login-screen').forEach(s => s.classList.remove('active'));
+  const el = document.getElementById(id);
+  if (el) el.classList.add('active');
+}
+
+function setupPinInputs(selector) {
+  const inputs = document.querySelectorAll(selector);
+  inputs.forEach((inp, i) => {
+    inp.value = '';
+    inp.addEventListener('input', () => {
+      if (inp.value && i < inputs.length - 1) inputs[i + 1].focus();
+    });
+    inp.addEventListener('keydown', (e) => {
+      if (e.key === 'Backspace' && !inp.value && i > 0) inputs[i - 1].focus();
+    });
+  });
+  if (inputs[0]) inputs[0].focus();
+}
+
+function getPinValue(selector) {
+  return Array.from(document.querySelectorAll(selector)).map(i => i.value).join('');
+}
+
+async function verifyFamilyCode() {
+  const code = document.getElementById('family-code-input').value.trim();
+  try {
+    const res = await fetch(API_BASE + '/api/users/verify-family-code', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code })
+    }).then(r => r.json());
+    if (res.valid) {
+      currentFamilyCode = code;
+      localStorage.setItem('treeni_family_code', code);
+      showProfileSelect();
+    } else {
+      document.getElementById('family-error').textContent = 'Vaara koodi';
+    }
+  } catch(e) {
+    document.getElementById('family-error').textContent = 'Yhteysvirhe';
+  }
+}
+
+async function showProfileSelect() {
+  showLoginScreen('login-profile');
+  try {
+    const profiles = await api('/api/users/profiles');
+    const list = document.getElementById('profile-list');
+    if (profiles.length === 0) {
+      list.innerHTML = '<div style="text-align:center;color:var(--muted);padding:16px;font-size:13px">Ei viela profiileja. Luo ensimmainen!</div>';
+    } else {
+      list.innerHTML = profiles.map(p =>
+        `<div class="profile-item" onclick="selectProfile(${p.id}, '${p.name.replace(/'/g, "\\'")}')">
+          <div class="profile-avatar">${p.name.charAt(0).toUpperCase()}</div>
+          <div class="profile-name">${p.name}</div>
+        </div>`
+      ).join('');
+    }
+  } catch(e) {
+    document.getElementById('profile-list').innerHTML = '<div style="color:var(--accent2);font-size:13px">Virhe ladattaessa profiileja</div>';
+  }
+}
+
+let selectedLoginUserId = null;
+let selectedLoginName = '';
+
+function selectProfile(id, name) {
+  selectedLoginUserId = id;
+  selectedLoginName = name;
+  document.getElementById('pin-user-label').textContent = name;
+  showLoginScreen('login-pin');
+  setupPinInputs('.pin-input[data-pin]');
+}
+
+async function loginWithPin() {
+  const pin = getPinValue('.pin-input[data-pin]');
+  if (pin.length !== 4) return;
+  try {
+    const res = await api('/api/users/login', { method: 'POST', body: { userId: selectedLoginUserId, pin } });
+    if (res.userId) {
+      currentUserId = res.userId;
+      currentUserName = res.name;
+      localStorage.setItem('treeni_user_id', res.userId);
+      localStorage.setItem('treeni_user_name', res.name);
+      enterApp();
+    } else {
+      document.getElementById('pin-error').textContent = res.error || 'Vaara PIN';
+      setupPinInputs('.pin-input[data-pin]');
+    }
+  } catch(e) {
+    document.getElementById('pin-error').textContent = 'Yhteysvirhe';
+  }
+}
+
+// Auto-submit PIN when 4th digit entered
+document.addEventListener('input', (e) => {
+  if (e.target.matches('.pin-input[data-pin="3"]') && e.target.value) loginWithPin();
+});
+
+function showCreateProfile() {
+  showLoginScreen('login-create');
+  document.getElementById('new-profile-name').value = '';
+  document.getElementById('create-error').textContent = '';
+  setupPinInputs('.pin-input[data-newpin]');
+}
+
+async function createProfile() {
+  const name = document.getElementById('new-profile-name').value.trim();
+  const pin = getPinValue('.pin-input[data-newpin]');
+  if (!name) { document.getElementById('create-error').textContent = 'Syota nimi'; return; }
+  if (pin.length !== 4) { document.getElementById('create-error').textContent = 'PIN pitaa olla 4 numeroa'; return; }
+  try {
+    const res = await api('/api/users/profiles', { method: 'POST', body: { name, pin } });
+    if (res.userId) {
+      currentUserId = res.userId;
+      currentUserName = res.name;
+      localStorage.setItem('treeni_user_id', res.userId);
+      localStorage.setItem('treeni_user_name', res.name);
+      enterApp();
+    } else {
+      document.getElementById('create-error').textContent = res.error || 'Virhe';
+    }
+  } catch(e) {
+    document.getElementById('create-error').textContent = 'Yhteysvirhe';
+  }
+}
+
+function showResetPin() {
+  document.getElementById('reset-user-label').textContent = selectedLoginName;
+  showLoginScreen('login-reset');
+  document.getElementById('reset-family-code').value = '';
+  document.getElementById('reset-error').textContent = '';
+  setupPinInputs('.pin-input[data-resetpin]');
+}
+
+function showPinEntry() {
+  showLoginScreen('login-pin');
+  document.getElementById('pin-error').textContent = '';
+  setupPinInputs('.pin-input[data-pin]');
+}
+
+async function resetPin() {
+  const familyCode = document.getElementById('reset-family-code').value.trim();
+  const newPin = getPinValue('.pin-input[data-resetpin]');
+  if (!familyCode) { document.getElementById('reset-error').textContent = 'Syota perheen koodi'; return; }
+  if (newPin.length !== 4) { document.getElementById('reset-error').textContent = 'PIN pitaa olla 4 numeroa'; return; }
+  try {
+    const res = await fetch(API_BASE + '/api/users/reset-pin', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: selectedLoginUserId, familyCode, newPin })
+    }).then(r => r.json());
+    if (res.success) {
+      showPinEntry();
+      document.getElementById('pin-error').textContent = '';
+      document.getElementById('pin-error').style.color = 'var(--accent)';
+      document.getElementById('pin-error').textContent = 'PIN vaihdettu! Kirjaudu uudella PIN:lla.';
+      setTimeout(() => { document.getElementById('pin-error').style.color = ''; }, 3000);
+    } else {
+      document.getElementById('reset-error').textContent = res.error || 'Virhe';
+    }
+  } catch(e) {
+    document.getElementById('reset-error').textContent = 'Yhteysvirhe';
+  }
+}
+
+function enterApp() {
+  document.querySelectorAll('.login-screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('app').style.display = '';
+  document.getElementById('splash').classList.add('hidden');
+  document.getElementById('greeting').textContent = 'Hei, ' + currentUserName + '!';
+  initApp();
+}
+
+function logout() {
+  currentUserId = null;
+  currentUserName = '';
+  localStorage.removeItem('treeni_user_id');
+  localStorage.removeItem('treeni_user_name');
+  document.getElementById('app').style.display = 'none';
+  showLoginScreen('login-profile');
+  showProfileSelect();
 }
 
 // ============================================================
@@ -583,18 +864,67 @@ let weightSuggestions = {};
 // INIT
 // ============================================================
 window.addEventListener('load', async () => {
-  setTimeout(() => document.getElementById('splash').classList.add('hidden'), 1400);
+  // Register service worker
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js').catch(e => console.log('SW registration failed:', e));
+  }
 
-  // Register user
-  try {
-    const result = await api('/api/users/register', { method: 'POST', body: { deviceId: getDeviceId() } });
-    currentUserId = result.userId;
-  } catch(e) { console.error('User registration failed, using local mode:', e); }
+  // Check if already logged in
+  const savedCode = localStorage.getItem('treeni_family_code');
+  const savedUserId = localStorage.getItem('treeni_user_id');
+  const savedUserName = localStorage.getItem('treeni_user_name');
 
-  // Load data from server if available
+  if (savedCode) currentFamilyCode = savedCode;
+
+  // Verify saved family code is still valid
+  if (savedCode) {
+    try {
+      const res = await fetch(API_BASE + '/api/users/verify-family-code', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: savedCode })
+      }).then(r => r.json());
+      if (!res.valid) {
+        localStorage.removeItem('treeni_family_code');
+        localStorage.removeItem('treeni_user_id');
+        localStorage.removeItem('treeni_user_name');
+        setTimeout(() => document.getElementById('splash').classList.add('hidden'), 800);
+        return; // Show family code screen
+      }
+    } catch(e) {
+      // Offline - trust saved credentials
+    }
+  }
+
+  if (savedCode && savedUserId && savedUserName) {
+    currentUserId = parseInt(savedUserId);
+    currentUserName = savedUserName;
+    enterApp();
+  } else if (savedCode) {
+    setTimeout(() => document.getElementById('splash').classList.add('hidden'), 800);
+    showProfileSelect();
+  } else {
+    // Check if family code is required
+    try {
+      const res = await fetch(API_BASE + '/api/users/verify-family-code', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: '' })
+      }).then(r => r.json());
+      if (res.valid) {
+        // No family code required - go to profile select
+        setTimeout(() => document.getElementById('splash').classList.add('hidden'), 800);
+        showProfileSelect();
+        return;
+      }
+    } catch(e) {}
+    setTimeout(() => document.getElementById('splash').classList.add('hidden'), 800);
+    // Show family code screen (default)
+  }
+});
+
+async function initApp() {
+  // Load data from server
   if (currentUserId) {
     try {
-      // Load program from server
       const serverProg = await api('/api/programs/' + currentUserId);
       if (serverProg && serverProg.data) {
         state.program = serverProg.data;
@@ -602,7 +932,6 @@ window.addEventListener('load', async () => {
         localStorage.setItem('treeni_program', JSON.stringify(state.program));
         localStorage.setItem('treeni_schedule', JSON.stringify(state.schedule));
       }
-      // Load sessions from server
       const serverSessions = await api('/api/workouts/sessions/' + currentUserId + '?limit=100');
       if (serverSessions && serverSessions.length) {
         state.history = serverSessions.map(s => ({
@@ -612,7 +941,6 @@ window.addEventListener('load', async () => {
         }));
         localStorage.setItem('treeni_history', JSON.stringify(state.history));
       }
-      // Load sleep from server
       const serverSleep = await api('/api/sleep/' + currentUserId + '?limit=30');
       if (serverSleep && serverSleep.length) {
         sleepData = serverSleep.map(s => ({ date: s.date, start: s.bedtime, end: s.wake_time, hours: s.hours, quality: s.quality }));
@@ -624,14 +952,7 @@ window.addEventListener('load', async () => {
 
   initChips(); initWeekdayPicker(); initEquipmentChips(); initSleep();
   updateHome(); updateProgram(); updateHistory();
-  const h = new Date().getHours();
-  document.getElementById('greeting').textContent = (h<12?'Huomenta!':h<17?'Hei!':'Iltaa!') + ' Valmiina treenaamaan?';
-
-  // Register service worker
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/sw.js').catch(e => console.log('SW registration failed:', e));
-  }
-});
+}
 
 // ============================================================
 // NAVIGATION
@@ -1174,6 +1495,7 @@ function openSettings() {
   document.getElementById('prog-status').textContent = state.program ? state.program.name + ' &middot; ' + state.program.weeks + ' viikkoa' : 'Ei ohjelmaa';
   document.getElementById('hist-status').textContent = state.history.length + ' treenia';
   document.getElementById('push-status').textContent = Notification.permission === 'granted' ? 'Kaytossa' : 'Ei kaytossa';
+  document.getElementById('settings-user-name').textContent = currentUserName || '-';
   document.getElementById('settings-modal').classList.add('open');
 }
 function closeSettings() { document.getElementById('settings-modal').classList.remove('open'); }

@@ -38,8 +38,14 @@ async function initDb() {
   db.run(`CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     device_id TEXT UNIQUE NOT NULL,
+    name TEXT,
+    pin_hash TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )`);
+
+  // Add columns if upgrading from older schema
+  try { db.run('ALTER TABLE users ADD COLUMN name TEXT'); } catch(e) {}
+  try { db.run('ALTER TABLE users ADD COLUMN pin_hash TEXT'); } catch(e) {}
 
   db.run(`CREATE TABLE IF NOT EXISTS programs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
