@@ -161,7 +161,7 @@
   .exercise-guide-title { font-size: 11px; font-weight: 700; color: #64b4ff; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 6px; }
   .exercise-guide-text { font-size: 12px; color: var(--muted); line-height: 1.6; }
   .exercise-guide-muscles { font-size: 11px; color: var(--accent); margin-top: 6px; }
-  .exercise-guide-img { width: 100%; max-width: 200px; border-radius: 8px; margin-top: 8px; }
+  .exercise-guide-gif { width: 100%; max-width: 280px; border-radius: 10px; margin: 0 auto 10px; display: block; background: var(--surface2); }
   .sleep-card { background: linear-gradient(135deg, #0d0d2b, #1a1a3e); border: 1px solid #2a2a5a; border-radius: var(--radius); padding: 16px; margin-bottom: 12px; }
   .sleep-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
   .sleep-title { font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 1px; color: #8888ff; }
@@ -1261,7 +1261,7 @@ function showWeek(wi) {
   area.innerHTML = '<div class="card" style="margin-bottom:10px;background:rgba(200,255,0,.04);border-color:rgba(200,255,0,.2)"><div style="font-size:11px;color:var(--accent);font-weight:700;letter-spacing:1px;text-transform:uppercase">VIIKKO ' + week.week + '</div><div style="font-size:16px;font-weight:600;margin-top:2px">' + (week.theme || '') + '</div></div>';
   week.days.forEach((day, di) => {
     const div = document.createElement('div'); div.className = 'workout-day';
-    div.innerHTML = '<div class="workout-day-header" onclick="toggleDay(\'w' + wi + 'd' + di + '\')"><div><div class="workout-day-title">' + day.title + '</div><div style="font-size:12px;color:var(--muted);margin-top:2px">' + day.focus + '</div></div><div style="display:flex;align-items:center;gap:8px"><div class="workout-day-badge">' + day.exercises.length + ' liiketta</div><span id="arrow-w' + wi + 'd' + di + '" style="color:var(--muted);transition:transform .2s">&#9660;</span></div></div><div class="workout-day-body" id="day-body-w' + wi + 'd' + di + '">' + day.exercises.map((ex, j) => '<div class="exercise-row"><div class="exercise-num">' + (j + 1) + '</div><div class="exercise-info"><div class="exercise-name">' + ex.name + '</div><div class="exercise-meta">' + ex.sets + ' sarjaa &times; ' + ex.reps + ' &middot; Lepo ' + ex.rest + 's</div>' + (ex.equipment ? '<div class="exercise-equipment">&#128295; ' + ex.equipment + '</div>' : '') + (ex.notes ? '<div style="font-size:11px;color:var(--accent);margin-top:3px">&#128161; ' + ex.notes + '</div>' : '') + '<div style="margin-top:4px"><span class="video-btn" onclick="event.stopPropagation();openYtModal(\'' + ex.name.replace(/'/g, "\\'") + ' tekniikka\',\'' + ex.name.replace(/'/g, "\\'") + '\')">&#9654; Video</span></div>' + '</div></div>').join('') + '<button class="btn btn-primary" style="margin-top:12px" onclick="startWorkoutByRef(' + wi + ',' + di + ')">&#9654; Aloita tama treeni</button></div>';
+    div.innerHTML = '<div class="workout-day-header" onclick="toggleDay(\'w' + wi + 'd' + di + '\')"><div><div class="workout-day-title">' + day.title + '</div><div style="font-size:12px;color:var(--muted);margin-top:2px">' + day.focus + '</div></div><div style="display:flex;align-items:center;gap:8px"><div class="workout-day-badge">' + day.exercises.length + ' liiketta</div><span id="arrow-w' + wi + 'd' + di + '" style="color:var(--muted);transition:transform .2s">&#9660;</span></div></div><div class="workout-day-body" id="day-body-w' + wi + 'd' + di + '">' + day.exercises.map((ex, j) => '<div class="exercise-row"><div class="exercise-num">' + (j + 1) + '</div><div class="exercise-info"><div class="exercise-name">' + ex.name + '</div><div class="exercise-meta">' + ex.sets + ' sarjaa &times; ' + ex.reps + ' &middot; Lepo ' + ex.rest + 's</div>' + (ex.equipment ? '<div class="exercise-equipment">&#128295; ' + ex.equipment + '</div>' : '') + (ex.notes ? '<div style="font-size:11px;color:var(--accent);margin-top:3px">&#128161; ' + ex.notes + '</div>' : '') + '</div></div>').join('') + '<button class="btn btn-primary" style="margin-top:12px" onclick="startWorkoutByRef(' + wi + ',' + di + ')">&#9654; Aloita tama treeni</button></div>';
     area.appendChild(div);
   });
 }
@@ -1332,7 +1332,7 @@ async function startWorkoutByRef(wi, di) {
     }
 
     const exDiv = document.createElement('div');
-    exDiv.innerHTML = '<div class="active-exercise"><div class="active-ex-name">' + ex.name + '</div><div style="font-size:13px;color:var(--muted)">' + ex.sets + ' sarjaa &times; ' + ex.reps + ' &middot; Lepo ' + ex.rest + 's</div>' + (ex.equipment ? '<div style="font-size:12px;color:#5577bb;margin-top:4px">&#128295; ' + ex.equipment + '</div>' : '') + (ex.notes ? '<div style="font-size:12px;color:var(--accent);margin-top:6px">&#128161; ' + ex.notes + '</div>' : '') + hintHtml + '<div id="exercise-info-' + ei + '" class="exercise-guide" style="display:none"></div>' + '<div style="margin-top:8px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap"><span class="video-btn" style="background:rgba(100,180,255,.1);border-color:rgba(100,180,255,.25);color:#64b4ff" onclick="loadExerciseInfo(' + ei + ',\'' + ex.name.replace(/'/g, "\\'") + '\')">&#128214; Ohje</span><span class="video-btn" onclick="openYtModal(\'' + ex.name.replace(/'/g, "\\'") + ' tekniikka\',\'' + ex.name.replace(/'/g, "\\'") + '\')">&#9654; Video</span></div></div>';
+    exDiv.innerHTML = '<div class="active-exercise"><div class="active-ex-name">' + ex.name + '</div><div style="font-size:13px;color:var(--muted)">' + ex.sets + ' sarjaa &times; ' + ex.reps + ' &middot; Lepo ' + ex.rest + 's</div>' + (ex.equipment ? '<div style="font-size:12px;color:#5577bb;margin-top:4px">&#128295; ' + ex.equipment + '</div>' : '') + (ex.notes ? '<div style="font-size:12px;color:var(--accent);margin-top:6px">&#128161; ' + ex.notes + '</div>' : '') + hintHtml + '<div id="exercise-info-' + ei + '" class="exercise-guide" style="display:none"></div>' + '<div style="margin-top:8px;text-align:center"><span class="video-btn" style="background:rgba(100,180,255,.1);border-color:rgba(100,180,255,.25);color:#64b4ff;padding:6px 16px;font-size:12px" onclick="loadExerciseInfo(' + ei + ',\'' + ex.name.replace(/'/g, "\\'") + '\')">&#127916; Nayta ohje & animaatio</span></div></div>';
     cont.appendChild(exDiv);
     const hdr = document.createElement('div');
     hdr.style.cssText = 'display:flex;gap:8px;padding:6px 0;font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px';
@@ -1796,7 +1796,14 @@ async function loadExerciseInfo(exerciseIndex, exerciseName) {
 
 function renderExerciseInfo(container, data) {
   container.style.display = 'block';
-  let html = '<div class="exercise-guide-title">Suoritusohje</div>';
+  let html = '';
+
+  // GIF animation first
+  if (data.gifUrl) {
+    html += '<img class="exercise-guide-gif" src="' + data.gifUrl + '" alt="' + data.name + '" onerror="this.style.display=\'none\'">';
+  }
+
+  html += '<div class="exercise-guide-title">Suoritusohje</div>';
 
   if (data.description) {
     html += '<div class="exercise-guide-text">' + data.description + '</div>';
@@ -1805,13 +1812,10 @@ function renderExerciseInfo(container, data) {
   }
 
   if (data.muscles) {
-    html += '<div class="exercise-guide-muscles">Lihakset: ' + data.muscles + '</div>';
+    html += '<div class="exercise-guide-muscles">Kohdelihas: ' + data.muscles + '</div>';
   }
   if (data.musclesSecondary) {
     html += '<div class="exercise-guide-muscles" style="color:var(--muted)">Avustavat: ' + data.musclesSecondary + '</div>';
-  }
-  if (data.images && data.images.length > 0) {
-    html += '<img class="exercise-guide-img" src="' + data.images[0] + '" alt="Liike" onerror="this.style.display=\'none\'">';
   }
 
   container.innerHTML = html;

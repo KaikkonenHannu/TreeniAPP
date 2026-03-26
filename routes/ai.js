@@ -71,46 +71,80 @@ router.get('/youtube', async (req, res) => {
   }
 });
 
-// Wger Exercise API - exercise instructions
+// Exercise info - combines ExerciseDB (GIF) + Wger (text instructions)
 router.get('/exercise-info', async (req, res) => {
-  try {
-    const q = encodeURIComponent(req.query.name || '');
-    const response = await fetch(`https://wger.de/api/v2/exercise/search/?term=${q}&language=english&format=json`);
-    const data = await response.json();
+  const exerciseName = req.query.name || '';
+  let gifUrl = '';
+  let description = '';
+  let muscles = '';
+  let musclesSecondary = '';
+  let target = '';
+  let secondaryMuscles = [];
 
-    if (data.suggestions && data.suggestions.length > 0) {
-      const exercise = data.suggestions[0].data;
-      // Fetch full exercise info with description
+  // 1. Try ExerciseDB for GIF animation
+  const exerciseDbKey = process.env.EXERCISEDB_API_KEY;
+  if (exerciseDbKey) {
+    try {
+      const searchName = exerciseName.toLowerCase().replace(/[^a-z0-9 ]/g, '').trim();
+      const response = await fetch(`https://exercisedb.p.rapidapi.com/exercises/name/${encodeURIComponent(searchName)}?limit=5`, {
+        headers: {
+          'X-RapidAPI-Key': exerciseDbKey,
+          'X-RapidAPI-Host': 'exercisedb.p.rapidapi.com'
+        }
+      });
+      const exercises = await response.json();
+      if (Array.isArray(exercises) && exercises.length > 0) {
+        const ex = exercises[0];
+        gifUrl = ex.gifUrl || '';
+        target = ex.target || '';
+        secondaryMuscles = ex.secondaryMuscles || [];
+        muscles = target;
+        musclesSecondary = secondaryMuscles.join(', ');
+      }
+    } catch (err) {
+      console.error('ExerciseDB error:', err.message);
+    }
+  }
+
+  // 2. Try Wger for text description (always, as fallback for muscles too)
+  try {
+    const q = encodeURIComponent(exerciseName);
+    const wgerRes = await fetch(`https://wger.de/api/v2/exercise/search/?term=${q}&language=english&format=json`);
+    const wgerData = await wgerRes.json();
+
+    if (wgerData.suggestions && wgerData.suggestions.length > 0) {
+      const exercise = wgerData.suggestions[0].data;
       const infoRes = await fetch(`https://wger.de/api/v2/exerciseinfo/${exercise.id}/?format=json`);
       const info = await infoRes.json();
 
-      // Get English translation
       const enTranslation = info.translations ? info.translations.find(t => t.language === 2) : null;
-      const description = enTranslation ? enTranslation.description : '';
-      const name = enTranslation ? enTranslation.name : exercise.name;
+      if (enTranslation && enTranslation.description) {
+        description = enTranslation.description.replace(/<[^>]*>/g, '');
+      }
 
-      // Get muscle info
-      const muscles = (info.muscles || []).map(m => m.name_en || m.name).join(', ');
-      const musclesSecondary = (info.muscles_secondary || []).map(m => m.name_en || m.name).join(', ');
+      // Use Wger muscles if ExerciseDB didn't provide them
+      if (!muscles) {
+        muscles = (info.muscles || []).map(m => m.name_en || m.name).join(', ');
+        musclesSecondary = (info.muscles_secondary || []).map(m => m.name_en || m.name).join(', ');
+      }
 
-      // Get images
-      const images = (info.images || []).map(img => img.image);
-
-      res.json({
-        name,
-        description: description.replace(/<[^>]*>/g, ''), // strip HTML
-        muscles,
-        musclesSecondary,
-        images,
-        category: info.category ? info.category.name : ''
-      });
-    } else {
-      res.json({ name: req.query.name, description: '', muscles: '', musclesSecondary: '', images: [], category: '' });
+      // Use Wger images if no ExerciseDB GIF
+      if (!gifUrl && info.images && info.images.length > 0) {
+        gifUrl = info.images[0].image;
+      }
     }
   } catch (err) {
-    console.error('Wger API error:', err);
-    res.json({ name: req.query.name, description: '', muscles: '', musclesSecondary: '', images: [], category: '' });
+    console.error('Wger API error:', err.message);
   }
+
+  res.json({
+    name: exerciseName,
+    description,
+    muscles,
+    musclesSecondary,
+    gifUrl,
+    category: target || ''
+  });
 });
 
 module.exports = router;
