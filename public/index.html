@@ -574,7 +574,7 @@
       <div class="yt-title" id="yt-modal-title">OHJEVIDEO</div>
       <div class="icon-btn" onclick="closeYtModal()" style="background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.2);color:#fff">&#10005;</div>
     </div>
-    <iframe class="yt-frame" id="yt-frame" allow="autoplay; encrypted-media" allowfullscreen referrerpolicy="no-referrer-when-downgrade"></iframe>
+    <iframe class="yt-frame" id="yt-frame" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture" allowfullscreen playsinline></iframe>
     <div class="yt-results" id="yt-results"></div>
   </div>
 </div>
@@ -1744,14 +1744,14 @@ async function openYtModal(searchQuery, exerciseName) {
     if (data.error) throw new Error(data.error);
     const items = data.items || [];
     if (!items.length) { document.getElementById('yt-results').innerHTML = '<div class="yt-loading">Ei tuloksia</div>'; return; }
-    playYtVideo(items[0].id.videoId);
-    document.getElementById('yt-results').innerHTML = items.map(item => '<div class="yt-result" onclick="playYtVideo(\'' + item.id.videoId + '\')"><img class="yt-thumb" src="' + item.snippet.thumbnails.default.url + '" onerror="this.style.background=\'var(--surface2)\'"><div><div class="yt-result-title">' + item.snippet.title.substring(0, 60) + '</div><div class="yt-result-channel">' + item.snippet.channelTitle + '</div></div></div>').join('');
+    if (items[0].id && items[0].id.videoId) playYtVideo(items[0].id.videoId);
+    document.getElementById('yt-results').innerHTML = items.filter(item => item.id && item.id.videoId).map(item => '<div class="yt-result" onclick="playYtVideo(\'' + item.id.videoId + '\')"><img class="yt-thumb" src="' + (item.snippet.thumbnails && item.snippet.thumbnails.default ? item.snippet.thumbnails.default.url : '') + '" onerror="this.style.background=\'var(--surface2)\'"><div><div class="yt-result-title">' + item.snippet.title.substring(0, 60) + '</div><div class="yt-result-channel">' + item.snippet.channelTitle + '</div></div></div>').join('');
   } catch(e) {
     document.getElementById('yt-results').innerHTML = '<div class="yt-loading">Virhe: ' + e.message + '</div>';
   }
 }
 
-function playYtVideo(videoId) { document.getElementById('yt-frame').src = 'https://www.youtube.com/embed/' + videoId + '?autoplay=1'; }
+function playYtVideo(videoId) { document.getElementById('yt-frame').src = 'https://www.youtube.com/embed/' + videoId + '?rel=0&playsinline=1'; }
 function closeYtModal() { document.getElementById('yt-modal').classList.remove('open'); document.getElementById('yt-frame').src = ''; }
 
 // ============================================================
