@@ -1740,7 +1740,7 @@ async function openYtModal(searchQuery, exerciseName) {
   document.getElementById('yt-results').innerHTML = '<div class="yt-loading">Haetaan videoita...</div>';
   document.getElementById('yt-modal').classList.add('open');
   try {
-    const data = await api('/api/ai/youtube?q=' + encodeURIComponent(searchQuery + ' oikea tekniikka lyhyt'));
+    const data = await api('/api/ai/youtube?q=' + encodeURIComponent(searchQuery + ' exercise form demo short'));
     if (data.error) throw new Error(data.error);
     const items = data.items || [];
     if (!items.length) { document.getElementById('yt-results').innerHTML = '<div class="yt-loading">Ei tuloksia</div>'; return; }

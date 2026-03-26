@@ -61,7 +61,7 @@ router.get('/youtube', async (req, res) => {
 
   try {
     const q = encodeURIComponent(req.query.q || '');
-    const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${q}&type=video&videoDuration=short&maxResults=4&relevanceLanguage=fi&key=${apiKey}`;
+    const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${q}&type=video&videoDuration=short&maxResults=4&key=${apiKey}`;
     const response = await fetch(url);
     const data = await response.json();
     res.json(data);
