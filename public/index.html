@@ -1055,8 +1055,9 @@ Vastaa AINOASTAAN JSON (ei muuta tekstia):
       if (d.error) throw new Error(typeof d.error === 'string' ? d.error : d.error.message || 'AI error');
       text = d.choices[0].message.content;
     } else {
-      const d = await api('/api/ai/anthropic', { method: 'POST', body: { messages: [{ role: 'user', content: prompt }] } });
+      const d = await api('/api/ai/anthropic', { method: 'POST', body: { messages: [{ role: 'user', content: prompt }], max_tokens: 16000 } });
       if (d.error) throw new Error(typeof d.error === 'string' ? d.error : d.error.message || 'AI error');
+      if (d.stop_reason === 'max_tokens') throw new Error('AI-vastaus katkesi - yrita lyhyempaa ohjelmaa (vahemman viikkoja)');
       text = d.content.map(i => i.text || '').join('');
     }
     // Extract JSON from AI response - find the outermost { }

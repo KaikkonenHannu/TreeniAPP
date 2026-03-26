@@ -16,7 +16,7 @@ router.post('/anthropic', async (req, res) => {
       },
       body: JSON.stringify({
         model: req.body.model || 'claude-sonnet-4-20250514',
-        max_tokens: req.body.max_tokens || 4000,
+        max_tokens: req.body.max_tokens || 16000,
         messages: req.body.messages
       })
     });
@@ -42,7 +42,7 @@ router.post('/openai', async (req, res) => {
       },
       body: JSON.stringify({
         model: req.body.model || 'gpt-4o',
-        max_tokens: req.body.max_tokens || 4000,
+        max_tokens: req.body.max_tokens || 16000,
         messages: req.body.messages
       })
     });
