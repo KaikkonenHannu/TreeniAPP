@@ -431,7 +431,11 @@
     <div class="scroll">
       <div class="card">
         <div class="section-title" style="margin-bottom:16px">PERUSTIEDOT</div>
-        <div class="form-group"><label>Ika</label><input type="number" id="q-age" placeholder="25" min="13" max="90" inputmode="numeric"></div>
+        <div class="form-group"><label>Syntymapaiva</label><input type="date" id="q-birthday"></div>
+        <div style="display:flex;gap:10px">
+          <div class="form-group" style="flex:1"><label>Pituus (cm)</label><input type="number" id="q-height" placeholder="175" min="100" max="230" inputmode="numeric"></div>
+          <div class="form-group" style="flex:1"><label>Paino (kg)</label><input type="number" id="q-weight" placeholder="75" min="30" max="250" inputmode="decimal"></div>
+        </div>
         <div class="form-group"><label>Sukupuoli</label>
           <select id="q-gender"><option value="mies">Mies</option><option value="nainen">Nainen</option><option value="muu">Muu</option></select>
         </div>
@@ -972,7 +976,9 @@ function goTo(id) {
 function loadUserBasics() {
   const saved = JSON.parse(localStorage.getItem('treeni_user_basics') || 'null');
   if (!saved) return;
-  if (saved.age) document.getElementById('q-age').value = saved.age;
+  if (saved.birthday) document.getElementById('q-birthday').value = saved.birthday;
+  if (saved.height) document.getElementById('q-height').value = saved.height;
+  if (saved.weight) document.getElementById('q-weight').value = saved.weight;
   if (saved.gender) document.getElementById('q-gender').value = saved.gender;
   if (saved.level) document.getElementById('q-level').value = saved.level;
   if (saved.injuries) document.getElementById('q-injuries').value = saved.injuries;
@@ -980,7 +986,9 @@ function loadUserBasics() {
 
 function saveUserBasics() {
   const basics = {
-    age: document.getElementById('q-age').value,
+    birthday: document.getElementById('q-birthday').value,
+    height: document.getElementById('q-height').value,
+    weight: document.getElementById('q-weight').value,
     gender: document.getElementById('q-gender').value,
     level: document.getElementById('q-level').value,
     injuries: document.getElementById('q-injuries').value
@@ -988,8 +996,15 @@ function saveUserBasics() {
   localStorage.setItem('treeni_user_basics', JSON.stringify(basics));
 }
 
+function getAge() {
+  const bday = document.getElementById('q-birthday').value;
+  if (!bday) return '25';
+  const diff = Date.now() - new Date(bday).getTime();
+  return Math.floor(diff / (365.25 * 24 * 60 * 60 * 1000)).toString();
+}
+
 // Auto-save when fields change
-['q-age', 'q-gender', 'q-level', 'q-injuries'].forEach(id => {
+['q-birthday', 'q-height', 'q-weight', 'q-gender', 'q-level', 'q-injuries'].forEach(id => {
   const el = document.getElementById(id);
   if (el) el.addEventListener('change', saveUserBasics);
 });
@@ -1048,7 +1063,9 @@ function initWeekdayPicker() {
 async function generateProgram() {
   if (!state.selectedWeekdays.size) { showToast('Valitse treenipaivat!'); return; }
   if (!state.chips.goal) { showToast('Valitse tavoite!'); return; }
-  const age = document.getElementById('q-age').value || '25';
+  const age = getAge();
+  const height = document.getElementById('q-height').value || '';
+  const weight = document.getElementById('q-weight').value || '';
   const gender = document.getElementById('q-gender').value;
   const level = document.getElementById('q-level').value;
   const goal = state.chips.goal;
@@ -1058,6 +1075,7 @@ async function generateProgram() {
   const daysPerWeek = state.selectedWeekdays.size;
   const dayNms = ['Sunnuntai','Maanantai','Tiistai','Keskiviikko','Torstai','Perjantai','Lauantai'];
   const dayList = [...state.selectedWeekdays].sort((a,b)=>a-b).map(x=>dayNms[x]).join(', ');
+  const bodyInfo = (height ? ', pituus: ' + height + 'cm' : '') + (weight ? ', paino: ' + weight + 'kg' : '');
   const equipStr = state.place.startsWith('kuntosali')
     ? 'Kaytettavissa: ' + [...state.equipment].join(', ') + '. Tyyli: ' + (state.place==='kuntosali_laitteet'?'paaasiassa laitteet':state.place==='kuntosali_vapaat'?'paaasiassa vapaat painot':'vapaat painot ja laitteet') + '.'
     : state.place === 'kotona' ? 'Kotitreeni: kehonpaino, kasipainot, vastuskuminauhat.'
@@ -1069,7 +1087,7 @@ async function generateProgram() {
 
   const prompt = `Olet ammattivalmentaja. Luo ${weeks} viikon progressiivinen treeniohjelma:
 
-HENKILO: ${age}v ${gender}, kokemus: ${level}, tavoite: ${goal}, rajoitukset: ${injuries||'ei'}
+HENKILO: ${age}v ${gender}${bodyInfo}, kokemus: ${level}, tavoite: ${goal}, rajoitukset: ${injuries||'ei'}
 TREENIPAIVAT: ${daysPerWeek}x/vk (${dayList}), kesto ${duration} min
 YMPARISTO: ${equipStr}
 
