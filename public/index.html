@@ -1361,7 +1361,7 @@ async function startWorkoutByRef(wi, di) {
     }
 
     const exDiv = document.createElement('div');
-    exDiv.innerHTML = '<div class="active-exercise"><div class="active-ex-name">' + ex.name + '</div><div style="font-size:13px;color:var(--muted)">' + ex.sets + ' sarjaa &times; ' + ex.reps + ' &middot; Lepo ' + ex.rest + 's</div>' + (ex.equipment ? '<div style="font-size:12px;color:#5577bb;margin-top:4px">&#128295; ' + ex.equipment + '</div>' : '') + (ex.notes ? '<div style="font-size:12px;color:var(--accent);margin-top:6px">&#128161; ' + ex.notes + '</div>' : '') + hintHtml + '<div id="exercise-info-' + ei + '" class="exercise-guide" style="display:none"></div>' + '<div style="margin-top:8px;text-align:center"><span class="video-btn" style="background:rgba(100,180,255,.1);border-color:rgba(100,180,255,.25);color:#64b4ff;padding:6px 16px;font-size:12px" onclick="loadExerciseInfo(' + ei + ',\'' + ex.name.replace(/'/g, "\\'") + '\')">&#127916; Nayta ohje & animaatio</span></div></div>';
+    exDiv.innerHTML = '<div class="active-exercise"><div class="active-ex-name">' + ex.name + '</div><div style="font-size:13px;color:var(--muted)">' + ex.sets + ' sarjaa &times; ' + ex.reps + ' &middot; Lepo ' + ex.rest + 's</div>' + (ex.equipment ? '<div style="font-size:12px;color:#5577bb;margin-top:4px">&#128295; ' + ex.equipment + '</div>' : '') + (ex.notes ? '<div style="font-size:12px;color:var(--accent);margin-top:6px">&#128161; ' + ex.notes + '</div>' : '') + hintHtml + '<div id="exercise-gif-' + ei + '" style="text-align:center;margin-top:10px"><div style="color:var(--muted);font-size:12px">Ladataan...</div></div>' + '<div id="exercise-desc-' + ei + '" class="exercise-guide" style="display:none" data-exercise-name="' + ex.name.replace(/"/g, '&quot;') + '"></div>' + '<div style="margin-top:8px;text-align:center"><span class="video-btn" style="background:rgba(100,180,255,.1);border-color:rgba(100,180,255,.25);color:#64b4ff;padding:6px 16px;font-size:12px" onclick="toggleExerciseDesc(' + ei + ')">&#128214; Lue ohjeet</span></div></div>';
     cont.appendChild(exDiv);
     const hdr = document.createElement('div');
     hdr.style.cssText = 'display:flex;gap:8px;padding:6px 0;font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px';
@@ -1387,6 +1387,11 @@ async function startWorkoutByRef(wi, di) {
   cont.innerHTML += '<div class="cooldown-section"><div class="cooldown-title">&#129529; Jaahdyttely & Venyttely (5-10 min)</div>' + cooldownExercises.map(c => '<div class="warmup-item">&#128309; ' + c.name + ' <span>' + c.duration + '</span></div>').join('') + '</div>';
 
   document.getElementById('workout-modal').classList.add('open');
+
+  // Load exercise GIFs/images automatically
+  day.exercises.forEach((ex, ei) => {
+    loadExerciseGif(ei, ex.name);
+  });
 }
 
 function toggleSet(key) {
@@ -1795,44 +1800,58 @@ function closeYtModal() { document.getElementById('yt-modal').classList.remove('
 // ============================================================
 const exerciseInfoCache = {};
 
-async function loadExerciseInfo(exerciseIndex, exerciseName) {
-  const container = document.getElementById('exercise-info-' + exerciseIndex);
-  if (!container) return;
-
-  // Toggle: if already visible, hide it
-  if (container.style.display !== 'none') {
-    container.style.display = 'none';
-    return;
-  }
+// Load GIF/image automatically when workout opens
+async function loadExerciseGif(exerciseIndex, exerciseName) {
+  const gifContainer = document.getElementById('exercise-gif-' + exerciseIndex);
+  if (!gifContainer) return;
 
   // Check cache
   if (exerciseInfoCache[exerciseName]) {
-    renderExerciseInfo(container, exerciseInfoCache[exerciseName]);
+    renderGif(gifContainer, exerciseInfoCache[exerciseName]);
     return;
   }
-
-  container.style.display = 'block';
-  container.innerHTML = '<div class="exercise-guide-text" style="text-align:center">Haetaan ohjetta...</div>';
 
   try {
     const data = await api('/api/ai/exercise-info?name=' + encodeURIComponent(exerciseName));
     exerciseInfoCache[exerciseName] = data;
-    renderExerciseInfo(container, data);
+    renderGif(gifContainer, data);
   } catch(e) {
-    container.innerHTML = '<div class="exercise-guide-text">Ohjetta ei loytynyt</div>';
+    gifContainer.innerHTML = '';
   }
 }
 
-function renderExerciseInfo(container, data) {
-  container.style.display = 'block';
-  let html = '';
-
-  // GIF animation first
+function renderGif(container, data) {
   if (data.gifUrl) {
-    html += '<img class="exercise-guide-gif" src="' + data.gifUrl + '" alt="' + data.name + '" onerror="this.style.display=\'none\'">';
+    container.innerHTML = '<img class="exercise-guide-gif" src="' + data.gifUrl + '" alt="' + data.name + '" onerror="this.parentElement.innerHTML=\'\'">';
+  } else {
+    container.innerHTML = '';
+  }
+}
+
+// Toggle text description on button press
+function toggleExerciseDesc(exerciseIndex) {
+  const descContainer = document.getElementById('exercise-desc-' + exerciseIndex);
+  if (!descContainer) return;
+
+  if (descContainer.style.display !== 'none') {
+    descContainer.style.display = 'none';
+    return;
   }
 
-  html += '<div class="exercise-guide-title">Suoritusohje</div>';
+  const exName = descContainer.dataset.exerciseName;
+  const data = exName ? exerciseInfoCache[exName] : null;
+
+  if (data) {
+    renderDescription(descContainer, data);
+  } else {
+    descContainer.style.display = 'block';
+    descContainer.innerHTML = '<div class="exercise-guide-text" style="color:var(--muted)">Ohjetta ei loytynyt</div>';
+  }
+}
+
+function renderDescription(container, data) {
+  container.style.display = 'block';
+  let html = '<div class="exercise-guide-title">Suoritusohje</div>';
 
   if (data.description) {
     html += '<div class="exercise-guide-text">' + data.description + '</div>';
