@@ -1493,11 +1493,13 @@ async function loadStats() {
 // SETTINGS
 // ============================================================
 function openSettings() {
-  document.getElementById('ai-provider-label').textContent = AI_PROVIDER === 'openai' ? 'OpenAI (ChatGPT)' : 'Anthropic (Claude)';
-  document.getElementById('prog-status').textContent = state.program ? state.program.name + ' &middot; ' + state.program.weeks + ' viikkoa' : 'Ei ohjelmaa';
-  document.getElementById('hist-status').textContent = state.history.length + ' treenia';
-  document.getElementById('push-status').textContent = Notification.permission === 'granted' ? 'Kaytossa' : 'Ei kaytossa';
-  document.getElementById('settings-user-name').textContent = currentUserName || '-';
+  try {
+    document.getElementById('ai-provider-label').textContent = AI_PROVIDER === 'openai' ? 'OpenAI (ChatGPT)' : 'Anthropic (Claude)';
+    document.getElementById('prog-status').textContent = state.program ? state.program.name + ' \u00b7 ' + state.program.weeks + ' viikkoa' : 'Ei ohjelmaa';
+    document.getElementById('hist-status').textContent = state.history.length + ' treenia';
+    document.getElementById('push-status').textContent = (typeof Notification !== 'undefined' && Notification.permission === 'granted') ? 'Kaytossa' : 'Ei kaytossa';
+    document.getElementById('settings-user-name').textContent = currentUserName || '-';
+  } catch(e) { console.error('Settings init error:', e); }
   document.getElementById('settings-modal').classList.add('open');
 }
 function closeSettings() { document.getElementById('settings-modal').classList.remove('open'); }
