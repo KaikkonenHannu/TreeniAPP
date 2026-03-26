@@ -130,17 +130,37 @@ router.get('/exercise-info', async (req, res) => {
   // 1. Try exercisedb.dev for GIF animation + instructions (free, no API key)
   try {
     const searchName = englishName.toLowerCase().replace(/[^a-z0-9 ]/g, '').trim();
-    const response = await fetch(`https://exercisedb-api.vercel.app/api/v1/exercises?search=${encodeURIComponent(searchName)}&limit=5`);
+    const response = await fetch(`https://exercisedb-api.vercel.app/api/v1/exercises?search=${encodeURIComponent(searchName)}&limit=20`);
     const result = await response.json();
     const exercises = result.data || [];
     if (Array.isArray(exercises) && exercises.length > 0) {
-      const ex = exercises[0];
-      gifUrl = ex.gifUrl || '';
-      target = (ex.targetMuscles || []).join(', ');
+      // Find best match - prefer exact name match or closest match
+      const searchWords = searchName.split(' ');
+      let best = exercises[0];
+      let bestScore = 0;
+      for (const ex of exercises) {
+        const name = (ex.name || '').toLowerCase();
+        let score = 0;
+        // Exact match
+        if (name === searchName) { score = 100; }
+        else {
+          // Count matching words
+          for (const w of searchWords) {
+            if (name.includes(w)) score += 10;
+          }
+          // Bonus for shorter names (more specific)
+          if (name.split(' ').length <= searchWords.length + 1) score += 5;
+          // Bonus if name starts with search term
+          if (name.startsWith(searchWords[0])) score += 8;
+        }
+        if (score > bestScore) { bestScore = score; best = ex; }
+      }
+      gifUrl = best.gifUrl || '';
+      target = (best.targetMuscles || []).join(', ');
       muscles = target;
-      musclesSecondary = (ex.secondaryMuscles || []).join(', ');
-      if (ex.instructions && ex.instructions.length > 0) {
-        description = ex.instructions.map(s => s.replace(/^Step:\d+\s*/i, '')).join('\n');
+      musclesSecondary = (best.secondaryMuscles || []).join(', ');
+      if (best.instructions && best.instructions.length > 0) {
+        description = best.instructions.map(s => s.replace(/^Step:\d+\s*/i, '')).join('\n');
       }
     }
   } catch (err) {
@@ -181,18 +201,32 @@ router.get('/exercise-info', async (req, res) => {
   }
 
   // Translate description to Finnish using AI
-  if (description && process.env.ANTHROPIC_API_KEY) {
+  const translateKey = process.env.OPENAI_API_KEY || process.env.ANTHROPIC_API_KEY;
+  if (description && translateKey) {
     try {
-      const aiRes = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01' },
-        body: JSON.stringify({
-          model: 'claude-haiku-4-5-20251001', max_tokens: 500,
-          messages: [{ role: 'user', content: 'Kaanna tama liikeohje suomeksi. Vastaa VAIN kaannoksella, ei muuta:\n\n' + description }]
-        })
-      });
-      const aiData = await aiRes.json();
-      if (aiData.content && aiData.content[0]) description = aiData.content[0].text;
+      if (process.env.OPENAI_API_KEY) {
+        const aiRes = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${process.env.OPENAI_API_KEY}` },
+          body: JSON.stringify({
+            model: 'gpt-4o-mini', max_tokens: 500,
+            messages: [{ role: 'user', content: 'Kaanna tama liikeohje suomeksi. Vastaa VAIN kaannoksella, ei muuta:\n\n' + description }]
+          })
+        });
+        const aiData = await aiRes.json();
+        if (aiData.choices && aiData.choices[0]) description = aiData.choices[0].message.content;
+      } else {
+        const aiRes = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01' },
+          body: JSON.stringify({
+            model: 'claude-haiku-4-5-20251001', max_tokens: 500,
+            messages: [{ role: 'user', content: 'Kaanna tama liikeohje suomeksi. Vastaa VAIN kaannoksella, ei muuta:\n\n' + description }]
+          })
+        });
+        const aiData = await aiRes.json();
+        if (aiData.content && aiData.content[0]) description = aiData.content[0].text;
+      }
     } catch(e) { /* keep English if translation fails */ }
   }
 

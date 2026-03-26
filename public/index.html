@@ -663,7 +663,7 @@
 // CONFIG - all API calls go through own backend
 // ============================================================
 const API_BASE = '';
-const AI_PROVIDER = 'anthropic';
+const AI_PROVIDER = 'openai';
 
 let currentUserId = null;
 let currentFamilyCode = '';
@@ -1273,9 +1273,9 @@ async function adaptProgram() {
   const prompt = 'Minulla on treeniohjelma jossa on ' + state.program.weeks + ' viikkoa. Olen viikolla ' + (pos.weekIndex + 1) + ' mutta olen jaattanyt useamman treenin valiin. Muokkaa jaljella olevat viikot (viikosta ' + (pos.weekIndex + 1) + ' eteenpain) realistisemmiksi: vahenna vaikeusastetta ja volyymia astettain. Alkuperainen ohjelma JSON: ' + JSON.stringify(state.program.weeks_data.slice(pos.weekIndex)) + '. Vastaa AINOASTAAN JSON-taulukkona samanmuotoisia viikko-objekteja.';
 
   try {
-    const d = await api('/api/ai/anthropic', { method: 'POST', body: { messages: [{ role: 'user', content: prompt }], max_tokens: 4000 } });
-    if (d.error) throw new Error(d.error.message || 'AI error');
-    const text = d.content.map(i => i.text || '').join('');
+    const d = await api('/api/ai/openai', { method: 'POST', body: { messages: [{ role: 'user', content: prompt }], max_tokens: 4000 } });
+    if (d.error) throw new Error(typeof d.error === 'string' ? d.error : d.error.message || 'AI error');
+    const text = d.choices[0].message.content;
     let cleanedAdj = text.replace(/```json|```/g, '').trim();
     const adjStart = cleanedAdj.indexOf('[');
     const adjEnd = cleanedAdj.lastIndexOf(']');
