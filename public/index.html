@@ -1863,31 +1863,15 @@ async function loadExerciseGif(exerciseIndex, exerciseName) {
   }
 }
 
-async function renderGif(container, data) {
+function renderGif(container, data) {
+  let html = '';
   if (data.gifUrl) {
-    container.innerHTML = '<img class="exercise-guide-gif" src="' + data.gifUrl + '" alt="' + data.name + '" onerror="loadYtFallback(this.parentElement,\'' + (data.name || '').replace(/'/g, "\\'") + '\')">';
-  } else {
-    // No GIF - try YouTube short video as fallback
-    await loadYtFallback(container, data.name || '');
+    html += '<img class="exercise-guide-gif" src="' + data.gifUrl + '" alt="' + (data.name || '') + '" onerror="this.style.display=\'none\'">';
   }
-  // Show muscles below
   if (data.muscles) {
-    container.innerHTML += '<div style="padding:6px 10px;margin-top:6px;background:rgba(200,255,0,.06);border:1px solid rgba(200,255,0,.15);border-radius:8px;font-size:11px"><span style="color:var(--accent)">&#128170; ' + data.muscles + '</span>' + (data.musclesSecondary ? ' <span style="color:var(--muted)">&middot; ' + data.musclesSecondary + '</span>' : '') + '</div>';
+    html += '<div style="padding:6px 10px;margin-top:6px;background:rgba(200,255,0,.06);border:1px solid rgba(200,255,0,.15);border-radius:8px;font-size:11px"><span style="color:var(--accent)">&#128170; ' + data.muscles + '</span>' + (data.musclesSecondary ? ' <span style="color:var(--muted)">&middot; ' + data.musclesSecondary + '</span>' : '') + '</div>';
   }
-}
-
-async function loadYtFallback(container, exerciseName) {
-  try {
-    const data = await api('/api/ai/youtube?q=' + encodeURIComponent(exerciseName + ' exercise form demo short'));
-    if (data.items && data.items.length > 0) {
-      const item = data.items[0];
-      if (item.id && item.id.videoId) {
-        container.innerHTML = '<iframe class="exercise-guide-gif" style="aspect-ratio:16/9;border:none;max-width:100%;border-radius:10px" src="https://www.youtube-nocookie.com/embed/' + item.id.videoId + '?playsinline=1&origin=' + encodeURIComponent(window.location.origin) + '" allow="accelerometer;encrypted-media;gyroscope;picture-in-picture" allowfullscreen></iframe>';
-        return;
-      }
-    }
-  } catch(e) {}
-  container.innerHTML = '';
+  container.innerHTML = html || '';
 }
 
 // Toggle text description on button press
