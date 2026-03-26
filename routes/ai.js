@@ -160,7 +160,8 @@ router.get('/exercise-info', async (req, res) => {
 
     if (wgerData.suggestions && wgerData.suggestions.length > 0) {
       const exercise = wgerData.suggestions[0].data;
-      const infoRes = await fetch(`https://wger.de/api/v2/exerciseinfo/${exercise.id}/?format=json`);
+      const baseId = exercise.base_id || exercise.id;
+      const infoRes = await fetch(`https://wger.de/api/v2/exerciseinfo/${baseId}/?format=json`);
       const info = await infoRes.json();
 
       const enTranslation = info.translations ? info.translations.find(t => t.language === 2) : null;
@@ -176,7 +177,8 @@ router.get('/exercise-info', async (req, res) => {
 
       // Use Wger images if no ExerciseDB GIF
       if (!gifUrl && info.images && info.images.length > 0) {
-        gifUrl = info.images[0].image;
+        const imgPath = info.images[0].image;
+        gifUrl = imgPath.startsWith('http') ? imgPath : 'https://wger.de' + imgPath;
       }
     }
   } catch (err) {
