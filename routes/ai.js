@@ -141,7 +141,6 @@ router.get('/exercise-info', async (req, res) => {
         }
       });
       const exercises = await response.json();
-      console.log('ExerciseDB response:', response.status, Array.isArray(exercises) ? exercises.length + ' results' : JSON.stringify(exercises).substring(0, 200));
       if (Array.isArray(exercises) && exercises.length > 0) {
         const ex = exercises[0];
         gifUrl = ex.gifUrl || '';
@@ -149,6 +148,10 @@ router.get('/exercise-info', async (req, res) => {
         secondaryMuscles = ex.secondaryMuscles || [];
         muscles = target;
         musclesSecondary = secondaryMuscles.join(', ');
+        // ExerciseDB now provides instructions array instead of gifUrl
+        if (ex.instructions && ex.instructions.length > 0) {
+          description = ex.instructions.join('\n');
+        }
       }
     } catch (err) {
       console.error('ExerciseDB error:', err.message);
@@ -168,7 +171,7 @@ router.get('/exercise-info', async (req, res) => {
       const info = await infoRes.json();
 
       const enTranslation = info.translations ? info.translations.find(t => t.language === 2) : null;
-      if (enTranslation && enTranslation.description) {
+      if (!description && enTranslation && enTranslation.description) {
         description = enTranslation.description.replace(/<[^>]*>/g, '');
       }
 
@@ -178,14 +181,30 @@ router.get('/exercise-info', async (req, res) => {
         musclesSecondary = (info.muscles_secondary || []).map(m => m.name_en || m.name).join(', ');
       }
 
-      // Use Wger images if no ExerciseDB GIF
-      if (!gifUrl && info.images && info.images.length > 0) {
+      // Use Wger images (ExerciseDB no longer provides gifUrl)
+      if (info.images && info.images.length > 0) {
         const imgPath = info.images[0].image;
-        gifUrl = imgPath.startsWith('http') ? imgPath : 'https://wger.de' + imgPath;
+        if (!gifUrl) gifUrl = imgPath.startsWith('http') ? imgPath : 'https://wger.de' + imgPath;
       }
     }
   } catch (err) {
     console.error('Wger API error:', err.message);
+  }
+
+  // Translate description to Finnish using AI
+  if (description && process.env.ANTHROPIC_API_KEY) {
+    try {
+      const aiRes = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01' },
+        body: JSON.stringify({
+          model: 'claude-haiku-4-5-20251001', max_tokens: 500,
+          messages: [{ role: 'user', content: 'Kaanna tama liikeohje suomeksi. Vastaa VAIN kaannoksella, ei muuta:\n\n' + description }]
+        })
+      });
+      const aiData = await aiRes.json();
+      if (aiData.content && aiData.content[0]) description = aiData.content[0].text;
+    } catch(e) { /* keep English if translation fails */ }
   }
 
   res.json({
