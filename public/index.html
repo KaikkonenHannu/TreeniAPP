@@ -947,6 +947,7 @@ async function initApp() {
   }
 
   initChips(); initWeekdayPicker(); initEquipmentChips(); initSleep();
+  loadUserBasics();
   updateHome(); updateProgram(); updateHistory();
 }
 
@@ -964,6 +965,34 @@ function goTo(id) {
   if (id === 'screen-calendar') renderCalendar();
   if (id === 'screen-sleep') updateSleepView();
 }
+
+// ============================================================
+// USER BASICS - save/load personal info
+// ============================================================
+function loadUserBasics() {
+  const saved = JSON.parse(localStorage.getItem('treeni_user_basics') || 'null');
+  if (!saved) return;
+  if (saved.age) document.getElementById('q-age').value = saved.age;
+  if (saved.gender) document.getElementById('q-gender').value = saved.gender;
+  if (saved.level) document.getElementById('q-level').value = saved.level;
+  if (saved.injuries) document.getElementById('q-injuries').value = saved.injuries;
+}
+
+function saveUserBasics() {
+  const basics = {
+    age: document.getElementById('q-age').value,
+    gender: document.getElementById('q-gender').value,
+    level: document.getElementById('q-level').value,
+    injuries: document.getElementById('q-injuries').value
+  };
+  localStorage.setItem('treeni_user_basics', JSON.stringify(basics));
+}
+
+// Auto-save when fields change
+['q-age', 'q-gender', 'q-level', 'q-injuries'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener('change', saveUserBasics);
+});
 
 // ============================================================
 // CHIPS & PICKERS
