@@ -132,13 +132,16 @@ router.get('/exercise-info', async (req, res) => {
   if (exerciseDbKey) {
     try {
       const searchName = englishName.toLowerCase().replace(/[^a-z0-9 ]/g, '').trim();
-      const response = await fetch(`https://exercisedb.p.rapidapi.com/exercises/name/${encodeURIComponent(searchName)}?limit=5`, {
+      const exerciseDbUrl = `https://exercisedb.p.rapidapi.com/exercises/name/${encodeURIComponent(searchName)}?limit=5`;
+      console.log('ExerciseDB search:', searchName, exerciseDbUrl);
+      const response = await fetch(exerciseDbUrl, {
         headers: {
           'X-RapidAPI-Key': exerciseDbKey,
           'X-RapidAPI-Host': 'exercisedb.p.rapidapi.com'
         }
       });
       const exercises = await response.json();
+      console.log('ExerciseDB response:', response.status, Array.isArray(exercises) ? exercises.length + ' results' : JSON.stringify(exercises).substring(0, 200));
       if (Array.isArray(exercises) && exercises.length > 0) {
         const ex = exercises[0];
         gifUrl = ex.gifUrl || '';
@@ -193,6 +196,27 @@ router.get('/exercise-info', async (req, res) => {
     gifUrl,
     category: target || ''
   });
+});
+
+// Debug: test ExerciseDB directly
+router.get('/exercise-debug', async (req, res) => {
+  const exerciseDbKey = process.env.EXERCISEDB_API_KEY;
+  if (!exerciseDbKey) return res.json({ error: 'EXERCISEDB_API_KEY not set', keyLength: 0 });
+
+  const name = req.query.name || 'squat';
+  try {
+    const url = `https://exercisedb.p.rapidapi.com/exercises/name/${encodeURIComponent(name)}?limit=3`;
+    const response = await fetch(url, {
+      headers: {
+        'X-RapidAPI-Key': exerciseDbKey,
+        'X-RapidAPI-Host': 'exercisedb.p.rapidapi.com'
+      }
+    });
+    const data = await response.json();
+    res.json({ status: response.status, keyPrefix: exerciseDbKey.substring(0, 8) + '...', resultCount: Array.isArray(data) ? data.length : 'not array', data: Array.isArray(data) ? data.slice(0, 2) : data });
+  } catch(err) {
+    res.json({ error: err.message });
+  }
 });
 
 module.exports = router;
