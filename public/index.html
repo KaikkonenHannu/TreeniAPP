@@ -157,6 +157,11 @@
   .recovery-tip { font-size: 13px; color: var(--muted); line-height: 1.5; }
   .video-btn { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 600; color: #ff4444; background: rgba(255,68,68,.1); border: 1px solid rgba(255,68,68,.25); border-radius: 20px; padding: 3px 10px; cursor: pointer; margin-top: 5px; transition: all .2s; text-decoration: none; }
   .video-btn:hover { background: rgba(255,68,68,.2); }
+  .exercise-guide { margin-top: 10px; padding: 12px; background: rgba(100,180,255,.06); border: 1px solid rgba(100,180,255,.15); border-radius: 10px; text-align: left; }
+  .exercise-guide-title { font-size: 11px; font-weight: 700; color: #64b4ff; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 6px; }
+  .exercise-guide-text { font-size: 12px; color: var(--muted); line-height: 1.6; }
+  .exercise-guide-muscles { font-size: 11px; color: var(--accent); margin-top: 6px; }
+  .exercise-guide-img { width: 100%; max-width: 200px; border-radius: 8px; margin-top: 8px; }
   .sleep-card { background: linear-gradient(135deg, #0d0d2b, #1a1a3e); border: 1px solid #2a2a5a; border-radius: var(--radius); padding: 16px; margin-bottom: 12px; }
   .sleep-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
   .sleep-title { font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 1px; color: #8888ff; }
@@ -1327,7 +1332,7 @@ async function startWorkoutByRef(wi, di) {
     }
 
     const exDiv = document.createElement('div');
-    exDiv.innerHTML = '<div class="active-exercise"><div class="active-ex-name">' + ex.name + '</div><div style="font-size:13px;color:var(--muted)">' + ex.sets + ' sarjaa &times; ' + ex.reps + ' &middot; Lepo ' + ex.rest + 's</div>' + (ex.equipment ? '<div style="font-size:12px;color:#5577bb;margin-top:4px">&#128295; ' + ex.equipment + '</div>' : '') + (ex.notes ? '<div style="font-size:12px;color:var(--accent);margin-top:6px">&#128161; ' + ex.notes + '</div>' : '') + hintHtml + '<div style="margin-top:8px"><span class="video-btn" onclick="openYtModal(\'' + ex.name.replace(/'/g, "\\'") + ' tekniikka\',\'' + ex.name.replace(/'/g, "\\'") + '\')">&#9654; YouTube-ohje</span></div></div>';
+    exDiv.innerHTML = '<div class="active-exercise"><div class="active-ex-name">' + ex.name + '</div><div style="font-size:13px;color:var(--muted)">' + ex.sets + ' sarjaa &times; ' + ex.reps + ' &middot; Lepo ' + ex.rest + 's</div>' + (ex.equipment ? '<div style="font-size:12px;color:#5577bb;margin-top:4px">&#128295; ' + ex.equipment + '</div>' : '') + (ex.notes ? '<div style="font-size:12px;color:var(--accent);margin-top:6px">&#128161; ' + ex.notes + '</div>' : '') + hintHtml + '<div id="exercise-info-' + ei + '" class="exercise-guide" style="display:none"></div>' + '<div style="margin-top:8px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap"><span class="video-btn" style="background:rgba(100,180,255,.1);border-color:rgba(100,180,255,.25);color:#64b4ff" onclick="loadExerciseInfo(' + ei + ',\'' + ex.name.replace(/'/g, "\\'") + '\')">&#128214; Ohje</span><span class="video-btn" onclick="openYtModal(\'' + ex.name.replace(/'/g, "\\'") + ' tekniikka\',\'' + ex.name.replace(/'/g, "\\'") + '\')">&#9654; Video</span></div></div>';
     cont.appendChild(exDiv);
     const hdr = document.createElement('div');
     hdr.style.cssText = 'display:flex;gap:8px;padding:6px 0;font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px';
@@ -1755,6 +1760,62 @@ function playYtVideo(videoId) {
   document.getElementById('yt-frame').src = 'https://www.youtube-nocookie.com/embed/' + videoId + '?playsinline=1&origin=' + encodeURIComponent(window.location.origin);
 }
 function closeYtModal() { document.getElementById('yt-modal').classList.remove('open'); document.getElementById('yt-frame').src = ''; }
+
+// ============================================================
+// WGER EXERCISE INFO
+// ============================================================
+const exerciseInfoCache = {};
+
+async function loadExerciseInfo(exerciseIndex, exerciseName) {
+  const container = document.getElementById('exercise-info-' + exerciseIndex);
+  if (!container) return;
+
+  // Toggle: if already visible, hide it
+  if (container.style.display !== 'none') {
+    container.style.display = 'none';
+    return;
+  }
+
+  // Check cache
+  if (exerciseInfoCache[exerciseName]) {
+    renderExerciseInfo(container, exerciseInfoCache[exerciseName]);
+    return;
+  }
+
+  container.style.display = 'block';
+  container.innerHTML = '<div class="exercise-guide-text" style="text-align:center">Haetaan ohjetta...</div>';
+
+  try {
+    const data = await api('/api/ai/exercise-info?name=' + encodeURIComponent(exerciseName));
+    exerciseInfoCache[exerciseName] = data;
+    renderExerciseInfo(container, data);
+  } catch(e) {
+    container.innerHTML = '<div class="exercise-guide-text">Ohjetta ei loytynyt</div>';
+  }
+}
+
+function renderExerciseInfo(container, data) {
+  container.style.display = 'block';
+  let html = '<div class="exercise-guide-title">Suoritusohje</div>';
+
+  if (data.description) {
+    html += '<div class="exercise-guide-text">' + data.description + '</div>';
+  } else {
+    html += '<div class="exercise-guide-text" style="color:var(--muted)">Tarkempaa ohjetta ei loytynyt talle liikkeelle.</div>';
+  }
+
+  if (data.muscles) {
+    html += '<div class="exercise-guide-muscles">Lihakset: ' + data.muscles + '</div>';
+  }
+  if (data.musclesSecondary) {
+    html += '<div class="exercise-guide-muscles" style="color:var(--muted)">Avustavat: ' + data.musclesSecondary + '</div>';
+  }
+  if (data.images && data.images.length > 0) {
+    html += '<img class="exercise-guide-img" src="' + data.images[0] + '" alt="Liike" onerror="this.style.display=\'none\'">';
+  }
+
+  container.innerHTML = html;
+}
 
 // ============================================================
 // SLEEP

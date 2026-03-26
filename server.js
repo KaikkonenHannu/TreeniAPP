@@ -18,7 +18,7 @@ app.use(helmet({
       scriptSrcAttr: ["'unsafe-inline'"],
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
-      imgSrc: ["'self'", "data:", "https://i.ytimg.com", "https://*.ytimg.com"],
+      imgSrc: ["'self'", "data:", "https://i.ytimg.com", "https://*.ytimg.com", "https://wger.de"],
       frameSrc: ["'self'", "https://www.youtube.com", "https://www.youtube-nocookie.com"],
       connectSrc: ["'self'", "https://treeniapp-production.up.railway.app"]
     }
