@@ -127,35 +127,24 @@ router.get('/exercise-info', async (req, res) => {
   let target = '';
   let secondaryMuscles = [];
 
-  // 1. Try ExerciseDB for GIF animation
-  const exerciseDbKey = process.env.EXERCISEDB_API_KEY;
-  if (exerciseDbKey) {
-    try {
-      const searchName = englishName.toLowerCase().replace(/[^a-z0-9 ]/g, '').trim();
-      const exerciseDbUrl = `https://exercisedb.p.rapidapi.com/exercises/name/${encodeURIComponent(searchName)}?limit=5`;
-      console.log('ExerciseDB search:', searchName, exerciseDbUrl);
-      const response = await fetch(exerciseDbUrl, {
-        headers: {
-          'X-RapidAPI-Key': exerciseDbKey,
-          'X-RapidAPI-Host': 'exercisedb.p.rapidapi.com'
-        }
-      });
-      const exercises = await response.json();
-      if (Array.isArray(exercises) && exercises.length > 0) {
-        const ex = exercises[0];
-        gifUrl = ex.gifUrl || '';
-        target = ex.target || '';
-        secondaryMuscles = ex.secondaryMuscles || [];
-        muscles = target;
-        musclesSecondary = secondaryMuscles.join(', ');
-        // ExerciseDB now provides instructions array instead of gifUrl
-        if (ex.instructions && ex.instructions.length > 0) {
-          description = ex.instructions.join('\n');
-        }
+  // 1. Try exercisedb.dev for GIF animation + instructions (free, no API key)
+  try {
+    const searchName = englishName.toLowerCase().replace(/[^a-z0-9 ]/g, '').trim();
+    const response = await fetch(`https://exercisedb-api.vercel.app/api/v1/exercises?search=${encodeURIComponent(searchName)}&limit=5`);
+    const result = await response.json();
+    const exercises = result.data || [];
+    if (Array.isArray(exercises) && exercises.length > 0) {
+      const ex = exercises[0];
+      gifUrl = ex.gifUrl || '';
+      target = (ex.targetMuscles || []).join(', ');
+      muscles = target;
+      musclesSecondary = (ex.secondaryMuscles || []).join(', ');
+      if (ex.instructions && ex.instructions.length > 0) {
+        description = ex.instructions.map(s => s.replace(/^Step:\d+\s*/i, '')).join('\n');
       }
-    } catch (err) {
-      console.error('ExerciseDB error:', err.message);
     }
+  } catch (err) {
+    console.error('ExerciseDB.dev error:', err.message);
   }
 
   // 2. Try Wger for text description (always, as fallback for muscles too)
@@ -215,27 +204,6 @@ router.get('/exercise-info', async (req, res) => {
     gifUrl,
     category: target || ''
   });
-});
-
-// Debug: test ExerciseDB directly
-router.get('/exercise-debug', async (req, res) => {
-  const exerciseDbKey = process.env.EXERCISEDB_API_KEY;
-  if (!exerciseDbKey) return res.json({ error: 'EXERCISEDB_API_KEY not set', keyLength: 0 });
-
-  const name = req.query.name || 'squat';
-  try {
-    const url = `https://exercisedb.p.rapidapi.com/exercises/name/${encodeURIComponent(name)}?limit=3`;
-    const response = await fetch(url, {
-      headers: {
-        'X-RapidAPI-Key': exerciseDbKey,
-        'X-RapidAPI-Host': 'exercisedb.p.rapidapi.com'
-      }
-    });
-    const data = await response.json();
-    res.json({ status: response.status, keyPrefix: exerciseDbKey.substring(0, 8) + '...', resultCount: Array.isArray(data) ? data.length : 'not array', data: Array.isArray(data) ? data.slice(0, 2) : data });
-  } catch(err) {
-    res.json({ error: err.message });
-  }
 });
 
 module.exports = router;
